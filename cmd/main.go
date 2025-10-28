@@ -1,12 +1,16 @@
 package main
 
 import (
-	"api-employees-and-departaments/config"
-	"fmt"
+	"api-employees-and-departaments/internal/config"
+	"log"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	fmt.Println("Iniciando projeto")
-
-	config.GlobalConfig.LoadVariables()
+	_ = godotenv.Load() // optional
+	_, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
+	}
 }
