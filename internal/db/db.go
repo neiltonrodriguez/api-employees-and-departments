@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"api-employees-and-departaments/internal/config"
+	"api-employees-and-departments/config"
 )
 
 func Connect(cfg *config.Config) (*gorm.DB, error) {
