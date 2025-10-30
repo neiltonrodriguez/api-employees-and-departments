@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"api-employees-and-departments/config"
+	_ "api-employees-and-departments/docs"
 	"api-employees-and-departments/internal/db"
 	"api-employees-and-departments/internal/domain/department"
 	"api-employees-and-departments/internal/domain/employee"
@@ -15,6 +16,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
+
+// @title API de Colaboradores e Departamentos
+// @version 1.0
+// @description API para gerenciamento de colaboradores e departamentos com hierarquia
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name Suporte da API
+// @contact.email suporte@api.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api/v1
 
 func main() {
 	// Load environment variables

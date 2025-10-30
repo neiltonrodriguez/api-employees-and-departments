@@ -1,0 +1,875 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API para gerenciamento de colaboradores e departamentos com hierarquia",
+        "title": "API de Colaboradores e Departamentos",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Suporte da API",
+            "email": "suporte@api.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/departments": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "departments"
+                ],
+                "summary": "List all departments",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.DepartmentResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "departments"
+                ],
+                "summary": "Create a new department",
+                "parameters": [
+                    {
+                        "description": "Department data",
+                        "name": "department",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateDepartmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.DepartmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/departments/list": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "departments"
+                ],
+                "summary": "List departments with filters and pagination",
+                "parameters": [
+                    {
+                        "description": "Filter and pagination params",
+                        "name": "filters",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListDepartmentsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/departments/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "departments"
+                ],
+                "summary": "Get department by ID with full hierarchy and manager name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Department ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.DepartmentWithHierarchyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "departments"
+                ],
+                "summary": "Update a department",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Department ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Department data",
+                        "name": "department",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateDepartmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.DepartmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "departments"
+                ],
+                "summary": "Delete a department",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Department ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employees"
+                ],
+                "summary": "List all employees",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.EmployeeResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employees"
+                ],
+                "summary": "Create a new employee",
+                "parameters": [
+                    {
+                        "description": "Employee data",
+                        "name": "employee",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateEmployeeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EmployeeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/list": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employees"
+                ],
+                "summary": "List employees with filters and pagination",
+                "parameters": [
+                    {
+                        "description": "Filter and pagination params",
+                        "name": "filters",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListEmployeesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employees"
+                ],
+                "summary": "Get employee by ID with manager name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Employee ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EmployeeWithManagerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employees"
+                ],
+                "summary": "Update an employee",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Employee ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Employee data",
+                        "name": "employee",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateEmployeeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EmployeeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employees"
+                ],
+                "summary": "Delete an employee",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Employee ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/managers/{id}/employees": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "managers"
+                ],
+                "summary": "Get all employees subordinate to a manager (recursive)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Manager ID (Employee ID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.EmployeeResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.CreateDepartmentRequest": {
+            "type": "object",
+            "required": [
+                "manager_id",
+                "name"
+            ],
+            "properties": {
+                "manager_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_department_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateEmployeeRequest": {
+            "type": "object",
+            "required": [
+                "cpf",
+                "department_id",
+                "name"
+            ],
+            "properties": {
+                "cpf": {
+                    "type": "string"
+                },
+                "department_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.DepartmentResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "manager_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_department_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.DepartmentWithHierarchyResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "manager_id": {
+                    "type": "string"
+                },
+                "manager_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_department_id": {
+                    "type": "string"
+                },
+                "subdepartments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DepartmentWithHierarchyResponse"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.EmployeeResponse": {
+            "type": "object",
+            "properties": {
+                "cpf": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "department_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rg": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.EmployeeWithManagerResponse": {
+            "type": "object",
+            "properties": {
+                "cpf": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "department_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "manager_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rg": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ListDepartmentsRequest": {
+            "type": "object",
+            "required": [
+                "page",
+                "page_size"
+            ],
+            "properties": {
+                "manager_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "parent_department_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ListEmployeesRequest": {
+            "type": "object",
+            "required": [
+                "page",
+                "page_size"
+            ],
+            "properties": {
+                "cpf": {
+                    "type": "string"
+                },
+                "department_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "rg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PaginatedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UpdateDepartmentRequest": {
+            "type": "object",
+            "required": [
+                "manager_id",
+                "name"
+            ],
+            "properties": {
+                "manager_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_department_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateEmployeeRequest": {
+            "type": "object",
+            "required": [
+                "cpf",
+                "department_id",
+                "name"
+            ],
+            "properties": {
+                "cpf": {
+                    "type": "string"
+                },
+                "department_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rg": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

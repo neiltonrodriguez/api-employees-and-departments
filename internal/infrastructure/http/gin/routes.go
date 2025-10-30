@@ -2,6 +2,8 @@ package ginapi
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type RouterConfig struct {
@@ -25,6 +27,9 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 			"service": "api-employees-and-departments",
 		})
 	})
+
+	// Swagger documentation
+	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")

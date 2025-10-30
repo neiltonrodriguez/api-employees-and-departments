@@ -1,0 +1,577 @@
+basePath: /api/v1
+definitions:
+  dto.CreateDepartmentRequest:
+    properties:
+      manager_id:
+        type: string
+      name:
+        type: string
+      parent_department_id:
+        type: string
+    required:
+    - manager_id
+    - name
+    type: object
+  dto.CreateEmployeeRequest:
+    properties:
+      cpf:
+        type: string
+      department_id:
+        type: string
+      name:
+        type: string
+      rg:
+        type: string
+    required:
+    - cpf
+    - department_id
+    - name
+    type: object
+  dto.DepartmentResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      manager_id:
+        type: string
+      name:
+        type: string
+      parent_department_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.DepartmentWithHierarchyResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      manager_id:
+        type: string
+      manager_name:
+        type: string
+      name:
+        type: string
+      parent_department_id:
+        type: string
+      subdepartments:
+        items:
+          $ref: '#/definitions/dto.DepartmentWithHierarchyResponse'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  dto.EmployeeResponse:
+    properties:
+      cpf:
+        type: string
+      created_at:
+        type: string
+      department_id:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      rg:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.EmployeeWithManagerResponse:
+    properties:
+      cpf:
+        type: string
+      created_at:
+        type: string
+      department_id:
+        type: string
+      id:
+        type: string
+      manager_name:
+        type: string
+      name:
+        type: string
+      rg:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  dto.ListDepartmentsRequest:
+    properties:
+      manager_name:
+        type: string
+      name:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      page_size:
+        maximum: 100
+        minimum: 1
+        type: integer
+      parent_department_id:
+        type: string
+    required:
+    - page
+    - page_size
+    type: object
+  dto.ListEmployeesRequest:
+    properties:
+      cpf:
+        type: string
+      department_id:
+        type: string
+      name:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      page_size:
+        maximum: 100
+        minimum: 1
+        type: integer
+      rg:
+        type: string
+    required:
+    - page
+    - page_size
+    type: object
+  dto.PaginatedResponse:
+    properties:
+      data: {}
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.UpdateDepartmentRequest:
+    properties:
+      manager_id:
+        type: string
+      name:
+        type: string
+      parent_department_id:
+        type: string
+    required:
+    - manager_id
+    - name
+    type: object
+  dto.UpdateEmployeeRequest:
+    properties:
+      cpf:
+        type: string
+      department_id:
+        type: string
+      name:
+        type: string
+      rg:
+        type: string
+    required:
+    - cpf
+    - department_id
+    - name
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: suporte@api.com
+    name: Suporte da API
+  description: API para gerenciamento de colaboradores e departamentos com hierarquia
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: API de Colaboradores e Departamentos
+  version: "1.0"
+paths:
+  /departments:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.DepartmentResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List all departments
+      tags:
+      - departments
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Department data
+        in: body
+        name: department
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateDepartmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.DepartmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Create a new department
+      tags:
+      - departments
+  /departments/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Department ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Delete a department
+      tags:
+      - departments
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Department ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DepartmentWithHierarchyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get department by ID with full hierarchy and manager name
+      tags:
+      - departments
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Department ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Department data
+        in: body
+        name: department
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateDepartmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DepartmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update a department
+      tags:
+      - departments
+  /departments/list:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Filter and pagination params
+        in: body
+        name: filters
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ListDepartmentsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List departments with filters and pagination
+      tags:
+      - departments
+  /employees:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.EmployeeResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List all employees
+      tags:
+      - employees
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Employee data
+        in: body
+        name: employee
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEmployeeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.EmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Create a new employee
+      tags:
+      - employees
+  /employees/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Delete an employee
+      tags:
+      - employees
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EmployeeWithManagerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get employee by ID with manager name
+      tags:
+      - employees
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Employee data
+        in: body
+        name: employee
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateEmployeeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update an employee
+      tags:
+      - employees
+  /employees/list:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Filter and pagination params
+        in: body
+        name: filters
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ListEmployeesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List employees with filters and pagination
+      tags:
+      - employees
+  /managers/{id}/employees:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Manager ID (Employee ID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.EmployeeResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get all employees subordinate to a manager (recursive)
+      tags:
+      - managers
+swagger: "2.0"
