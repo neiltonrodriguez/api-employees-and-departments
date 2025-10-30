@@ -3,12 +3,14 @@ package employee
 import (
 	"time"
 
+	uuidpkg "api-employees-and-departments/internal/domain/uuid"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Employee struct {
-	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID           uuid.UUID      `gorm:"type:uuid;primary_key" json:"id"`
 	Name         string         `gorm:"type:varchar(255);not null" json:"name"`
 	CPF          string         `gorm:"type:varchar(11);uniqueIndex;not null" json:"cpf"`
 	RG           *string        `gorm:"type:varchar(20);uniqueIndex" json:"rg,omitempty"`
@@ -20,4 +22,12 @@ type Employee struct {
 
 func (Employee) TableName() string {
 	return "employees"
+}
+
+// BeforeCreate hook to generate UUIDv7 before creating a new employee
+func (e *Employee) BeforeCreate(tx *gorm.DB) error {
+	if e.ID == uuid.Nil {
+		e.ID = uuidpkg.NewV7()
+	}
+	return nil
 }
