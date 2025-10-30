@@ -54,6 +54,7 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "description": "Create a new department. Use null (without quotes) for parent_department_id if creating a root department.",
                 "consumes": [
                     "application/json"
                 ],
@@ -185,6 +186,7 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "description": "Update a department. Use null (without quotes) for parent_department_id to remove parent reference.",
                 "consumes": [
                     "application/json"
                 ],
@@ -609,10 +611,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "manager_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "019a35a2-79e8-770f-b92e-48558b88f4b5"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Tecnologia"
                 },
                 "parent_department_id": {
                     "type": "string"
@@ -628,16 +632,20 @@ const docTemplate = `{
             ],
             "properties": {
                 "cpf": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "11144477735"
                 },
                 "department_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "019a35a2-0fa7-79a3-bf4b-231280e082f3"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "João Silva"
                 },
                 "rg": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456789"
                 }
             }
         },
@@ -845,10 +853,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "manager_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "019a35a2-79e8-770f-b92e-48558b88f4b5"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Tecnologia"
                 },
                 "parent_department_id": {
                     "type": "string"
@@ -864,16 +874,20 @@ const docTemplate = `{
             ],
             "properties": {
                 "cpf": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "11144477735"
                 },
                 "department_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "019a35a2-0fa7-79a3-bf4b-231280e082f3"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "João Silva"
                 },
                 "rg": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456789"
                 }
             }
         }

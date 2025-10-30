@@ -10,17 +10,17 @@ import (
 
 // Employee DTOs
 type CreateEmployeeRequest struct {
-	Name         string     `json:"name" binding:"required"`
-	CPF          string     `json:"cpf" binding:"required,len=11"`
-	RG           *string    `json:"rg,omitempty"`
-	DepartmentID uuid.UUID  `json:"department_id" binding:"required"`
+	Name         string    `json:"name" binding:"required" example:"João Silva"`
+	CPF          string    `json:"cpf" binding:"required,len=11" example:"11144477735"`
+	RG           *string   `json:"rg,omitempty" example:"123456789"`
+	DepartmentID uuid.UUID `json:"department_id" binding:"required" example:"019a35a2-0fa7-79a3-bf4b-231280e082f3"`
 }
 
 type UpdateEmployeeRequest struct {
-	Name         string     `json:"name" binding:"required"`
-	CPF          string     `json:"cpf" binding:"required,len=11"`
-	RG           *string    `json:"rg,omitempty"`
-	DepartmentID uuid.UUID  `json:"department_id" binding:"required"`
+	Name         string    `json:"name" binding:"required" example:"João Silva"`
+	CPF          string    `json:"cpf" binding:"required,len=11" example:"11144477735"`
+	RG           *string   `json:"rg,omitempty" example:"123456789"`
+	DepartmentID uuid.UUID `json:"department_id" binding:"required" example:"019a35a2-0fa7-79a3-bf4b-231280e082f3"`
 }
 
 type EmployeeResponse struct {
@@ -46,15 +46,15 @@ type EmployeeWithManagerResponse struct {
 
 // Department DTOs
 type CreateDepartmentRequest struct {
-	Name               string     `json:"name" binding:"required"`
-	ManagerID          uuid.UUID  `json:"manager_id" binding:"required"`
-	ParentDepartmentID *uuid.UUID `json:"parent_department_id,omitempty"`
+	Name               string       `json:"name" binding:"required" example:"Tecnologia"`
+	ManagerID          uuid.UUID    `json:"manager_id" binding:"required" example:"019a35a2-79e8-770f-b92e-48558b88f4b5"`
+	ParentDepartmentID NullableUUID `json:"parent_department_id,omitempty" swaggertype:"string"`
 }
 
 type UpdateDepartmentRequest struct {
-	Name               string     `json:"name" binding:"required"`
-	ManagerID          uuid.UUID  `json:"manager_id" binding:"required"`
-	ParentDepartmentID *uuid.UUID `json:"parent_department_id,omitempty"`
+	Name               string       `json:"name" binding:"required" example:"Tecnologia"`
+	ManagerID          uuid.UUID    `json:"manager_id" binding:"required" example:"019a35a2-79e8-770f-b92e-48558b88f4b5"`
+	ParentDepartmentID NullableUUID `json:"parent_department_id,omitempty" swaggertype:"string"`
 }
 
 type DepartmentResponse struct {
@@ -161,7 +161,7 @@ func ToDepartmentEntity(req *CreateDepartmentRequest) *department.Department {
 	return &department.Department{
 		Name:               req.Name,
 		ManagerID:          req.ManagerID,
-		ParentDepartmentID: req.ParentDepartmentID,
+		ParentDepartmentID: req.ParentDepartmentID.ToUUIDPointer(),
 	}
 }
 
@@ -169,7 +169,7 @@ func ToDepartmentEntityFromUpdate(req *UpdateDepartmentRequest) *department.Depa
 	return &department.Department{
 		Name:               req.Name,
 		ManagerID:          req.ManagerID,
-		ParentDepartmentID: req.ParentDepartmentID,
+		ParentDepartmentID: req.ParentDepartmentID.ToUUIDPointer(),
 	}
 }
 

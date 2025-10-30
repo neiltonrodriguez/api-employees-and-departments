@@ -90,6 +90,7 @@ func (h *DepartmentHandler) toHierarchyResponse(dept *department.DepartmentWithH
 
 // Create godoc
 // @Summary Create a new department
+// @Description Create a new department. Use null (without quotes) for parent_department_id if creating a root department.
 // @Tags departments
 // @Accept json
 // @Produce json
@@ -122,6 +123,7 @@ func (h *DepartmentHandler) Create(c *gin.Context) {
 
 // Update godoc
 // @Summary Update a department
+// @Description Update a department. Use null (without quotes) for parent_department_id to remove parent reference.
 // @Tags departments
 // @Accept json
 // @Produce json

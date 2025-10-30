@@ -3,8 +3,10 @@ definitions:
   dto.CreateDepartmentRequest:
     properties:
       manager_id:
+        example: 019a35a2-79e8-770f-b92e-48558b88f4b5
         type: string
       name:
+        example: Tecnologia
         type: string
       parent_department_id:
         type: string
@@ -15,12 +17,16 @@ definitions:
   dto.CreateEmployeeRequest:
     properties:
       cpf:
+        example: "11144477735"
         type: string
       department_id:
+        example: 019a35a2-0fa7-79a3-bf4b-231280e082f3
         type: string
       name:
+        example: João Silva
         type: string
       rg:
+        example: "123456789"
         type: string
     required:
     - cpf
@@ -161,8 +167,10 @@ definitions:
   dto.UpdateDepartmentRequest:
     properties:
       manager_id:
+        example: 019a35a2-79e8-770f-b92e-48558b88f4b5
         type: string
       name:
+        example: Tecnologia
         type: string
       parent_department_id:
         type: string
@@ -173,12 +181,16 @@ definitions:
   dto.UpdateEmployeeRequest:
     properties:
       cpf:
+        example: "11144477735"
         type: string
       department_id:
+        example: 019a35a2-0fa7-79a3-bf4b-231280e082f3
         type: string
       name:
+        example: João Silva
         type: string
       rg:
+        example: "123456789"
         type: string
     required:
     - cpf
@@ -221,6 +233,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Create a new department. Use null (without quotes) for parent_department_id
+        if creating a root department.
       parameters:
       - description: Department data
         in: body
@@ -306,6 +320,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Update a department. Use null (without quotes) for parent_department_id
+        to remove parent reference.
       parameters:
       - description: Department ID
         in: path
