@@ -10,7 +10,6 @@ import (
 	"api-employees-and-departments/internal/domain/department"
 	"api-employees-and-departments/internal/domain/employee"
 	ginapi "api-employees-and-departments/internal/infrastructure/http/gin"
-	"api-employees-and-departments/internal/infrastructure/migrations"
 	"api-employees-and-departments/internal/infrastructure/persistence"
 
 	"github.com/gin-gonic/gin"
@@ -49,12 +48,8 @@ func main() {
 
 	log.Println("Database connected successfully")
 
-	// Run migrations
-	if err := migrations.Run(database); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
-
-	log.Println("Migrations executed successfully")
+	// Note: Migrations are handled by Flyway before the application starts
+	// See docker-compose.yml for Flyway configuration
 
 	// Initialize repositories
 	employeeRepo := persistence.NewEmployeeRepository(database)

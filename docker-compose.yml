@@ -18,6 +18,22 @@ services:
       timeout: 5s
       retries: 5
 
+  flyway:
+    image: flyway/flyway:10-alpine
+    container_name: api-employees-flyway
+    command: -connectRetries=60 migrate
+    volumes:
+      - ./db/migrations:/flyway/sql
+    environment:
+      FLYWAY_URL: jdbc:postgresql://db:5432/companydb
+      FLYWAY_USER: postgres
+      FLYWAY_PASSWORD: postgres
+      FLYWAY_SCHEMAS: public
+      FLYWAY_BASELINE_ON_MIGRATE: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+
   app:
     build:
       context: .
@@ -38,6 +54,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:
