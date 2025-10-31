@@ -4,10 +4,12 @@ import (
 	"net/http"
 
 	"api-employees-and-departments/internal/domain/employee"
+	"api-employees-and-departments/internal/infrastructure/logging"
 	"api-employees-and-departments/internal/interfaces/api/dto"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type EmployeeHandler struct {
@@ -92,6 +94,10 @@ func (h *EmployeeHandler) GetByID(c *gin.Context) {
 func (h *EmployeeHandler) Create(c *gin.Context) {
 	var req dto.CreateEmployeeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logging.Warn("Employee creation validation failed",
+			zap.Error(err),
+			zap.String("request_id", getRequestID(c)),
+		)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Error:   "validation_error",
 			Message: err.Error(),
@@ -101,12 +107,24 @@ func (h *EmployeeHandler) Create(c *gin.Context) {
 
 	emp := dto.ToEmployeeEntity(&req)
 	if err := h.service.CreateEmployee(emp); err != nil {
+		logging.Error("Failed to create employee",
+			zap.Error(err),
+			zap.String("name", req.Name),
+			zap.String("cpf", req.CPF),
+			zap.String("request_id", getRequestID(c)),
+		)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error:   "creation_failed",
 			Message: err.Error(),
 		})
 		return
 	}
+
+	logging.Info("Employee created successfully",
+		zap.String("employee_id", emp.ID.String()),
+		zap.String("name", emp.Name),
+		zap.String("request_id", getRequestID(c)),
+	)
 
 	c.JSON(http.StatusCreated, dto.ToEmployeeResponse(emp))
 }
@@ -144,12 +162,22 @@ func (h *EmployeeHandler) Update(c *gin.Context) {
 
 	emp := dto.ToEmployeeEntityFromUpdate(&req)
 	if err := h.service.UpdateEmployee(id, emp); err != nil {
+		logging.Error("Failed to update employee",
+			zap.Error(err),
+			zap.String("employee_id", id.String()),
+			zap.String("request_id", getRequestID(c)),
+		)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error:   "update_failed",
 			Message: err.Error(),
 		})
 		return
 	}
+
+	logging.Info("Employee updated successfully",
+		zap.String("employee_id", id.String()),
+		zap.String("request_id", getRequestID(c)),
+	)
 
 	c.JSON(http.StatusOK, dto.ToEmployeeResponse(emp))
 }
@@ -176,12 +204,22 @@ func (h *EmployeeHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.DeleteEmployee(id); err != nil {
+		logging.Error("Failed to delete employee",
+			zap.Error(err),
+			zap.String("employee_id", id.String()),
+			zap.String("request_id", getRequestID(c)),
+		)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error:   "deletion_failed",
 			Message: err.Error(),
 		})
 		return
 	}
+
+	logging.Info("Employee deleted successfully",
+		zap.String("employee_id", id.String()),
+		zap.String("request_id", getRequestID(c)),
+	)
 
 	c.Status(http.StatusNoContent)
 }
@@ -250,4 +288,14 @@ func (h *EmployeeHandler) List(c *gin.Context) {
 		Total:      total,
 		TotalPages: totalPages,
 	})
+}
+
+// getRequestID retrieves the request ID from Gin context
+func getRequestID(c *gin.Context) string {
+	if requestID, exists := c.Get("RequestID"); exists {
+		if id, ok := requestID.(string); ok {
+			return id
+		}
+	}
+	return ""
 }

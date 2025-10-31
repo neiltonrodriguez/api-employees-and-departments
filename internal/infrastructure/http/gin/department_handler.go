@@ -4,10 +4,12 @@ import (
 	"net/http"
 
 	"api-employees-and-departments/internal/domain/department"
+	"api-employees-and-departments/internal/infrastructure/logging"
 	"api-employees-and-departments/internal/interfaces/api/dto"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type DepartmentHandler struct {
@@ -111,12 +113,23 @@ func (h *DepartmentHandler) Create(c *gin.Context) {
 
 	dept := dto.ToDepartmentEntity(&req)
 	if err := h.service.CreateDepartment(dept); err != nil {
+		logging.Error("Failed to create department",
+			zap.Error(err),
+			zap.String("name", req.Name),
+			zap.String("request_id", getRequestID(c)),
+		)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error:   "creation_failed",
 			Message: err.Error(),
 		})
 		return
 	}
+
+	logging.Info("Department created successfully",
+		zap.String("department_id", dept.ID.String()),
+		zap.String("name", dept.Name),
+		zap.String("request_id", getRequestID(c)),
+	)
 
 	c.JSON(http.StatusCreated, dto.ToDepartmentResponse(dept))
 }
@@ -155,12 +168,22 @@ func (h *DepartmentHandler) Update(c *gin.Context) {
 
 	dept := dto.ToDepartmentEntityFromUpdate(&req)
 	if err := h.service.UpdateDepartment(id, dept); err != nil {
+		logging.Error("Failed to update department",
+			zap.Error(err),
+			zap.String("department_id", id.String()),
+			zap.String("request_id", getRequestID(c)),
+		)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error:   "update_failed",
 			Message: err.Error(),
 		})
 		return
 	}
+
+	logging.Info("Department updated successfully",
+		zap.String("department_id", id.String()),
+		zap.String("request_id", getRequestID(c)),
+	)
 
 	c.JSON(http.StatusOK, dto.ToDepartmentResponse(dept))
 }
@@ -187,12 +210,22 @@ func (h *DepartmentHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.DeleteDepartment(id); err != nil {
+		logging.Error("Failed to delete department",
+			zap.Error(err),
+			zap.String("department_id", id.String()),
+			zap.String("request_id", getRequestID(c)),
+		)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error:   "deletion_failed",
 			Message: err.Error(),
 		})
 		return
 	}
+
+	logging.Info("Department deleted successfully",
+		zap.String("department_id", id.String()),
+		zap.String("request_id", getRequestID(c)),
+	)
 
 	c.Status(http.StatusNoContent)
 }

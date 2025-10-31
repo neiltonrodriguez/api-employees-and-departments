@@ -2,13 +2,14 @@ package ginapi
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
+	"api-employees-and-departments/internal/infrastructure/logging"
 	"api-employees-and-departments/internal/interfaces/api/dto"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // CORS middleware to handle Cross-Origin Resource Sharing
@@ -28,7 +29,7 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-// Logger middleware for custom logging
+// Logger middleware for structured HTTP logging with Zap
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Start timer
@@ -36,40 +37,77 @@ func Logger() gin.HandlerFunc {
 		path := c.Request.URL.Path
 		raw := c.Request.URL.RawQuery
 
+		// Get request ID from context
+		requestID, _ := c.Get("RequestID")
+
 		// Process request
 		c.Next()
 
 		// Calculate latency
 		latency := time.Since(start)
-		clientIP := c.ClientIP()
-		method := c.Request.Method
 		statusCode := c.Writer.Status()
-		errorMessage := c.Errors.ByType(gin.ErrorTypePrivate).String()
 
+		// Build full path with query string
+		fullPath := path
 		if raw != "" {
-			path = path + "?" + raw
+			fullPath = path + "?" + raw
 		}
 
-		// Log format
-		log.Printf("[GIN] %s | %3d | %13v | %15s | %-7s %s %s",
-			time.Now().Format("2006/01/02 - 15:04:05"),
-			statusCode,
-			latency,
-			clientIP,
-			method,
-			path,
-			errorMessage,
-		)
+		// Build structured log fields
+		fields := []zap.Field{
+			zap.String("method", c.Request.Method),
+			zap.String("path", fullPath),
+			zap.Int("status", statusCode),
+			zap.Duration("latency", latency),
+			zap.String("client_ip", c.ClientIP()),
+			zap.String("user_agent", c.Request.UserAgent()),
+			zap.Int("body_size", c.Writer.Size()),
+		}
+
+		// Add request ID if available
+		if requestID != nil {
+			fields = append(fields, zap.String("request_id", requestID.(string)))
+		}
+
+		// Add error message if any
+		if len(c.Errors) > 0 {
+			fields = append(fields, zap.String("errors", c.Errors.String()))
+		}
+
+		// Log based on status code
+		msg := "HTTP request completed"
+		if statusCode >= 500 {
+			logging.Error(msg, fields...)
+		} else if statusCode >= 400 {
+			logging.Warn(msg, fields...)
+		} else {
+			logging.Info(msg, fields...)
+		}
 	}
 }
 
-// Recovery middleware to handle panics
+// Recovery middleware to handle panics with structured logging
 func Recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				// Log the error
-				log.Printf("[PANIC RECOVERY] %v", err)
+				// Get request ID if available
+				requestID, _ := c.Get("RequestID")
+
+				// Build log fields
+				fields := []zap.Field{
+					zap.Any("panic", err),
+					zap.String("method", c.Request.Method),
+					zap.String("path", c.Request.URL.Path),
+					zap.String("client_ip", c.ClientIP()),
+				}
+
+				if requestID != nil {
+					fields = append(fields, zap.String("request_id", requestID.(string)))
+				}
+
+				// Log the panic with stack trace
+				logging.Error("Panic recovered", fields...)
 
 				// Return error response
 				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{

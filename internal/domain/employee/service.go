@@ -4,17 +4,22 @@ import (
 	"errors"
 	"fmt"
 
+	"api-employees-and-departments/internal/domain/logging"
 	"api-employees-and-departments/internal/domain/validators"
 
 	"github.com/google/uuid"
 )
 
 type Service struct {
-	repo Repository
+	repo   Repository
+	logger logging.Logger
 }
 
-func NewService(r Repository) *Service {
-	return &Service{repo: r}
+func NewService(r Repository, logger logging.Logger) *Service {
+	return &Service{
+		repo:   r,
+		logger: logger,
+	}
 }
 
 func (s *Service) GetAllEmployees() ([]Employee, error) {
@@ -45,9 +50,31 @@ func (s *Service) GetEmployeesByDepartmentIDs(departmentIDs []uuid.UUID) ([]Empl
 
 func (s *Service) CreateEmployee(emp *Employee) error {
 	if err := s.validateEmployee(emp); err != nil {
+		s.logger.Warn("Employee validation failed",
+			logging.String("name", emp.Name),
+			logging.String("cpf", emp.CPF),
+			logging.Error(err),
+		)
 		return err
 	}
-	return s.repo.Create(emp)
+
+	if err := s.repo.Create(emp); err != nil {
+		s.logger.Error("Failed to create employee in repository",
+			logging.String("employee_id", emp.ID.String()),
+			logging.String("name", emp.Name),
+			logging.Error(err),
+		)
+		return err
+	}
+
+	s.logger.Info("Employee created successfully",
+		logging.String("employee_id", emp.ID.String()),
+		logging.String("name", emp.Name),
+		logging.String("cpf", emp.CPF),
+		logging.String("department_id", emp.DepartmentID.String()),
+	)
+
+	return nil
 }
 
 func (s *Service) UpdateEmployee(id uuid.UUID, emp *Employee) error {
@@ -57,15 +84,36 @@ func (s *Service) UpdateEmployee(id uuid.UUID, emp *Employee) error {
 
 	existing, err := s.repo.FindByID(id)
 	if err != nil {
+		s.logger.Error("Employee not found for update",
+			logging.String("employee_id", id.String()),
+			logging.Error(err),
+		)
 		return fmt.Errorf("employee not found: %w", err)
 	}
 
 	if err := s.validateEmployee(emp); err != nil {
+		s.logger.Warn("Employee update validation failed",
+			logging.String("employee_id", id.String()),
+			logging.Error(err),
+		)
 		return err
 	}
 
 	emp.ID = existing.ID
-	return s.repo.Update(emp)
+	if err := s.repo.Update(emp); err != nil {
+		s.logger.Error("Failed to update employee in repository",
+			logging.String("employee_id", id.String()),
+			logging.Error(err),
+		)
+		return err
+	}
+
+	s.logger.Info("Employee updated successfully",
+		logging.String("employee_id", id.String()),
+		logging.String("name", emp.Name),
+	)
+
+	return nil
 }
 
 func (s *Service) DeleteEmployee(id uuid.UUID) error {
@@ -73,12 +121,29 @@ func (s *Service) DeleteEmployee(id uuid.UUID) error {
 		return errors.New("invalid employee id")
 	}
 
-	_, err := s.repo.FindByID(id)
+	employee, err := s.repo.FindByID(id)
 	if err != nil {
+		s.logger.Error("Employee not found for deletion",
+			logging.String("employee_id", id.String()),
+			logging.Error(err),
+		)
 		return fmt.Errorf("employee not found: %w", err)
 	}
 
-	return s.repo.Delete(id)
+	if err := s.repo.Delete(id); err != nil {
+		s.logger.Error("Failed to delete employee in repository",
+			logging.String("employee_id", id.String()),
+			logging.Error(err),
+		)
+		return err
+	}
+
+	s.logger.Info("Employee deleted successfully",
+		logging.String("employee_id", id.String()),
+		logging.String("name", employee.Name),
+	)
+
+	return nil
 }
 
 func (s *Service) validateEmployee(emp *Employee) error {

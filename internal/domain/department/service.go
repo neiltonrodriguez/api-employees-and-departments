@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"api-employees-and-departments/internal/domain/logging"
+
 	"github.com/google/uuid"
 )
 
@@ -18,14 +20,16 @@ type Employee struct {
 }
 
 type Service struct {
-	repo        Repository
+	repo         Repository
 	employeeRepo EmployeeRepository
+	logger       logging.Logger
 }
 
-func NewService(r Repository, empRepo EmployeeRepository) *Service {
+func NewService(r Repository, empRepo EmployeeRepository, logger logging.Logger) *Service {
 	return &Service{
-		repo:        r,
+		repo:         r,
 		employeeRepo: empRepo,
+		logger:       logger,
 	}
 }
 
@@ -122,6 +126,10 @@ func (s *Service) buildHierarchy(parentID uuid.UUID) ([]DepartmentWithHierarchy,
 
 func (s *Service) CreateDepartment(dept *Department) error {
 	if err := s.validateDepartment(dept); err != nil {
+		s.logger.Warn("Department validation failed",
+			logging.String("name", dept.Name),
+			logging.Error(err),
+		)
 		return err
 	}
 
@@ -130,11 +138,30 @@ func (s *Service) CreateDepartment(dept *Department) error {
 		// For new departments, just check if parent exists
 		_, err := s.repo.FindByID(*dept.ParentDepartmentID)
 		if err != nil {
+			s.logger.Error("Parent department not found",
+				logging.String("parent_id", dept.ParentDepartmentID.String()),
+				logging.Error(err),
+			)
 			return errors.New("parent department not found")
 		}
 	}
 
-	return s.repo.Create(dept)
+	if err := s.repo.Create(dept); err != nil {
+		s.logger.Error("Failed to create department in repository",
+			logging.String("department_id", dept.ID.String()),
+			logging.String("name", dept.Name),
+			logging.Error(err),
+		)
+		return err
+	}
+
+	s.logger.Info("Department created successfully",
+		logging.String("department_id", dept.ID.String()),
+		logging.String("name", dept.Name),
+		logging.String("manager_id", dept.ManagerID.String()),
+	)
+
+	return nil
 }
 
 func (s *Service) UpdateDepartment(id uuid.UUID, dept *Department) error {
@@ -144,25 +171,55 @@ func (s *Service) UpdateDepartment(id uuid.UUID, dept *Department) error {
 
 	existing, err := s.repo.FindByID(id)
 	if err != nil {
+		s.logger.Error("Department not found for update",
+			logging.String("department_id", id.String()),
+			logging.Error(err),
+		)
 		return fmt.Errorf("department not found: %w", err)
 	}
 
 	if err := s.validateDepartment(dept); err != nil {
+		s.logger.Warn("Department update validation failed",
+			logging.String("department_id", id.String()),
+			logging.Error(err),
+		)
 		return err
 	}
 
 	// Validate no cycles in hierarchy
 	if err := s.validateNoCycle(id, dept.ParentDepartmentID); err != nil {
+		s.logger.Error("Cycle detected in department hierarchy",
+			logging.String("department_id", id.String()),
+			logging.Error(err),
+		)
 		return err
 	}
 
 	// Validate that manager belongs to the department
 	if err := s.validateManagerBelongsToDepartment(dept.ManagerID, id); err != nil {
+		s.logger.Error("Manager validation failed",
+			logging.String("department_id", id.String()),
+			logging.String("manager_id", dept.ManagerID.String()),
+			logging.Error(err),
+		)
 		return err
 	}
 
 	dept.ID = existing.ID
-	return s.repo.Update(dept)
+	if err := s.repo.Update(dept); err != nil {
+		s.logger.Error("Failed to update department in repository",
+			logging.String("department_id", id.String()),
+			logging.Error(err),
+		)
+		return err
+	}
+
+	s.logger.Info("Department updated successfully",
+		logging.String("department_id", id.String()),
+		logging.String("name", dept.Name),
+	)
+
+	return nil
 }
 
 func (s *Service) DeleteDepartment(id uuid.UUID) error {
@@ -170,12 +227,29 @@ func (s *Service) DeleteDepartment(id uuid.UUID) error {
 		return errors.New("invalid department id")
 	}
 
-	_, err := s.repo.FindByID(id)
+	dept, err := s.repo.FindByID(id)
 	if err != nil {
+		s.logger.Error("Department not found for deletion",
+			logging.String("department_id", id.String()),
+			logging.Error(err),
+		)
 		return fmt.Errorf("department not found: %w", err)
 	}
 
-	return s.repo.Delete(id)
+	if err := s.repo.Delete(id); err != nil {
+		s.logger.Error("Failed to delete department in repository",
+			logging.String("department_id", id.String()),
+			logging.Error(err),
+		)
+		return err
+	}
+
+	s.logger.Info("Department deleted successfully",
+		logging.String("department_id", id.String()),
+		logging.String("name", dept.Name),
+	)
+
+	return nil
 }
 
 func (s *Service) validateDepartment(dept *Department) error {

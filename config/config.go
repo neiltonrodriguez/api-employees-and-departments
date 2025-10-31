@@ -13,6 +13,8 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	DBSSLMode  string
+	AppEnv     string
+	LogLevel   string
 }
 
 func Load() (*Config, error) {
@@ -24,6 +26,8 @@ func Load() (*Config, error) {
 		DBPassword: getenv("DATABASE_PASSWORD", "postgres"),
 		DBName:     getenv("DATABASE_NAME", "companydb"),
 		DBSSLMode:  getenv("DATABASE_SSLMODE", "disable"),
+		AppEnv:     getenv("APP_ENV", "development"),
+		LogLevel:   getenv("LOG_LEVEL", "info"),
 	}
 	return c, nil
 }

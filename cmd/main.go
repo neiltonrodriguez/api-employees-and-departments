@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"api-employees-and-departments/config"
 	_ "api-employees-and-departments/docs"
@@ -10,10 +9,12 @@ import (
 	"api-employees-and-departments/internal/domain/department"
 	"api-employees-and-departments/internal/domain/employee"
 	ginapi "api-employees-and-departments/internal/infrastructure/http/gin"
+	"api-employees-and-departments/internal/infrastructure/logging"
 	"api-employees-and-departments/internal/infrastructure/persistence"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 // @title API de Colaboradores e Departamentos
@@ -37,16 +38,29 @@ func main() {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		logging.Fatal("Failed to load config", zap.Error(err))
 	}
 
-	// Connect to database
+	if err := logging.InitLogger(cfg.AppEnv, cfg.LogLevel); err != nil {
+		logging.Fatal("Failed to initialize logger", zap.Error(err))
+	}
+	defer logging.Sync()
+
+	logging.Info("Application starting",
+		zap.String("app_env", cfg.AppEnv),
+		zap.String("log_level", cfg.LogLevel),
+		zap.String("port", cfg.Port),
+	)
+
 	database, err := db.Connect(cfg)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		logging.Fatal("Failed to connect to database", zap.Error(err))
 	}
 
-	log.Println("Database connected successfully")
+	logging.Info("Database connected successfully",
+		zap.String("host", cfg.DBHost),
+		zap.String("database", cfg.DBName),
+	)
 
 	// Note: Migrations are handled by Flyway before the application starts
 	// See docker-compose.yml for Flyway configuration
@@ -58,9 +72,13 @@ func main() {
 	// Create adapter for employee repository
 	employeeAdapter := persistence.NewEmployeeAdapter(employeeRepo.(*persistence.EmployeeRepository))
 
-	// Initialize services
-	employeeService := employee.NewService(employeeRepo)
-	departmentService := department.NewService(departmentRepo, employeeAdapter)
+	// Create domain loggers with context for each service (DIP - Dependency Inversion Principle)
+	employeeLogger := logging.NewZapLogger(logging.GetLogger().With(zap.String("service", "employee")))
+	departmentLogger := logging.NewZapLogger(logging.GetLogger().With(zap.String("service", "department")))
+
+	// Initialize services with logger injection
+	employeeService := employee.NewService(employeeRepo, employeeLogger)
+	departmentService := department.NewService(departmentRepo, employeeAdapter, departmentLogger)
 
 	// Initialize handlers
 	employeeHandler := ginapi.NewEmployeeHandler(employeeService)
@@ -79,9 +97,9 @@ func main() {
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
-	log.Printf("Starting server on %s", addr)
+	logging.Info("Starting HTTP server", zap.String("address", addr))
 
 	if err := router.Run(addr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		logging.Fatal("Failed to start server", zap.Error(err))
 	}
 }
