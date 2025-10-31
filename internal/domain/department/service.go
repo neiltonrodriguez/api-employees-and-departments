@@ -66,12 +66,6 @@ func (s *Service) GetDepartmentsByParentID(parentID uuid.UUID) ([]Department, er
 	return s.repo.FindByParentID(parentID)
 }
 
-type DepartmentWithHierarchy struct {
-	Department
-	ManagerName    string
-	Subdepartments []DepartmentWithHierarchy
-}
-
 func (s *Service) GetDepartmentWithHierarchy(id uuid.UUID) (*DepartmentWithHierarchy, error) {
 	if id == uuid.Nil {
 		return nil, errors.New("invalid department id")
@@ -98,33 +92,19 @@ func (s *Service) GetDepartmentWithHierarchy(id uuid.UUID) (*DepartmentWithHiera
 		)
 	}
 
-	// Cache miss or error - fetch from database
-	s.logger.Debug("Cache miss for department hierarchy",
+	// Cache miss or error - fetch from database using CTE recursive query
+	s.logger.Debug("Cache miss - fetching hierarchy from database using CTE",
 		logging.String("department_id", id.String()),
 	)
 
-	// Get the department
-	dept, err := s.repo.FindByID(id)
+	// Use PostgreSQL CTE recursive to fetch entire hierarchy in a single query
+	result, err := s.repo.FindHierarchyByID(id)
 	if err != nil {
-		return nil, err
-	}
-
-	// Get manager name
-	manager, err := s.employeeRepo.FindByID(dept.ManagerID)
-	if err != nil {
-		return nil, errors.New("manager not found")
-	}
-
-	// Build hierarchy recursively
-	subdepartments, err := s.buildHierarchy(id)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &DepartmentWithHierarchy{
-		Department:     *dept,
-		ManagerName:    manager.Name,
-		Subdepartments: subdepartments,
+		s.logger.Error("Failed to fetch department hierarchy",
+			logging.String("department_id", id.String()),
+			logging.Error(err),
+		)
+		return nil, fmt.Errorf("department not found: %w", err)
 	}
 
 	// Store in cache for future requests
@@ -145,6 +125,10 @@ func (s *Service) GetDepartmentWithHierarchy(id uuid.UUID) (*DepartmentWithHiera
 	return result, nil
 }
 
+// buildHierarchy is deprecated - replaced by PostgreSQL CTE recursive query in FindHierarchyByID
+// Kept here for reference only. This method had O(N*M) complexity with N queries.
+// The new CTE approach uses 1 single query for the entire hierarchy.
+/*
 func (s *Service) buildHierarchy(parentID uuid.UUID) ([]DepartmentWithHierarchy, error) {
 	// Find all direct children
 	children, err := s.repo.FindByParentID(parentID)
@@ -176,6 +160,7 @@ func (s *Service) buildHierarchy(parentID uuid.UUID) ([]DepartmentWithHierarchy,
 
 	return result, nil
 }
+*/
 
 func (s *Service) CreateDepartment(dept *Department) error {
 	if err := s.validateDepartment(dept); err != nil {
