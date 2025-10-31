@@ -1,9 +1,13 @@
 package department
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
+	"api-employees-and-departments/internal/domain/cache"
 	"api-employees-and-departments/internal/domain/logging"
 
 	"github.com/google/uuid"
@@ -23,13 +27,19 @@ type Service struct {
 	repo         Repository
 	employeeRepo EmployeeRepository
 	logger       logging.Logger
+	cache        cache.Cache
+	cacheTTL     time.Duration
+	cacheKeys    *cache.CacheKeyBuilder
 }
 
-func NewService(r Repository, empRepo EmployeeRepository, logger logging.Logger) *Service {
+func NewService(r Repository, empRepo EmployeeRepository, logger logging.Logger, c cache.Cache, cacheTTL time.Duration) *Service {
 	return &Service{
 		repo:         r,
 		employeeRepo: empRepo,
 		logger:       logger,
+		cache:        c,
+		cacheTTL:     cacheTTL,
+		cacheKeys:    cache.NewCacheKeyBuilder("department"),
 	}
 }
 
@@ -67,6 +77,32 @@ func (s *Service) GetDepartmentWithHierarchy(id uuid.UUID) (*DepartmentWithHiera
 		return nil, errors.New("invalid department id")
 	}
 
+	ctx := context.Background()
+	cacheKey := s.cacheKeys.Build("hierarchy", id.String())
+
+	// Try to get from cache first (Cache-Aside Pattern)
+	cachedData, err := s.cache.Get(ctx, cacheKey)
+	if err == nil && cachedData != "" {
+		var result DepartmentWithHierarchy
+		if err := json.Unmarshal([]byte(cachedData), &result); err == nil {
+			s.logger.Debug("Department hierarchy retrieved from cache",
+				logging.String("department_id", id.String()),
+				logging.String("cache_key", cacheKey),
+			)
+			return &result, nil
+		}
+		// If unmarshal fails, continue to fetch from database
+		s.logger.Warn("Failed to unmarshal cached department hierarchy",
+			logging.String("department_id", id.String()),
+			logging.Error(err),
+		)
+	}
+
+	// Cache miss or error - fetch from database
+	s.logger.Debug("Cache miss for department hierarchy",
+		logging.String("department_id", id.String()),
+	)
+
 	// Get the department
 	dept, err := s.repo.FindByID(id)
 	if err != nil {
@@ -85,11 +121,28 @@ func (s *Service) GetDepartmentWithHierarchy(id uuid.UUID) (*DepartmentWithHiera
 		return nil, err
 	}
 
-	return &DepartmentWithHierarchy{
+	result := &DepartmentWithHierarchy{
 		Department:     *dept,
 		ManagerName:    manager.Name,
 		Subdepartments: subdepartments,
-	}, nil
+	}
+
+	// Store in cache for future requests
+	if jsonData, err := json.Marshal(result); err == nil {
+		if err := s.cache.Set(ctx, cacheKey, string(jsonData), s.cacheTTL); err != nil {
+			s.logger.Warn("Failed to cache department hierarchy",
+				logging.String("department_id", id.String()),
+				logging.Error(err),
+			)
+		} else {
+			s.logger.Debug("Department hierarchy cached successfully",
+				logging.String("department_id", id.String()),
+				logging.String("ttl", s.cacheTTL.String()),
+			)
+		}
+	}
+
+	return result, nil
 }
 
 func (s *Service) buildHierarchy(parentID uuid.UUID) ([]DepartmentWithHierarchy, error) {
@@ -155,6 +208,11 @@ func (s *Service) CreateDepartment(dept *Department) error {
 		return err
 	}
 
+	// Invalidate cache for parent hierarchy (if exists)
+	if dept.ParentDepartmentID != nil {
+		s.invalidateHierarchyCache(*dept.ParentDepartmentID)
+	}
+
 	s.logger.Info("Department created successfully",
 		logging.String("department_id", dept.ID.String()),
 		logging.String("name", dept.Name),
@@ -214,6 +272,16 @@ func (s *Service) UpdateDepartment(id uuid.UUID, dept *Department) error {
 		return err
 	}
 
+	// Invalidate cache for this department and parents
+	s.invalidateHierarchyCache(id)
+	if existing.ParentDepartmentID != nil {
+		s.invalidateHierarchyCache(*existing.ParentDepartmentID)
+	}
+	if dept.ParentDepartmentID != nil && (existing.ParentDepartmentID == nil || *dept.ParentDepartmentID != *existing.ParentDepartmentID) {
+		// If parent changed, invalidate new parent too
+		s.invalidateHierarchyCache(*dept.ParentDepartmentID)
+	}
+
 	s.logger.Info("Department updated successfully",
 		logging.String("department_id", id.String()),
 		logging.String("name", dept.Name),
@@ -242,6 +310,12 @@ func (s *Service) DeleteDepartment(id uuid.UUID) error {
 			logging.Error(err),
 		)
 		return err
+	}
+
+	// Invalidate cache for this department and parent
+	s.invalidateHierarchyCache(id)
+	if dept.ParentDepartmentID != nil {
+		s.invalidateHierarchyCache(*dept.ParentDepartmentID)
 	}
 
 	s.logger.Info("Department deleted successfully",
@@ -319,4 +393,23 @@ func (s *Service) validateNoCycle(departmentID uuid.UUID, parentDepartmentID *uu
 	}
 
 	return nil
+}
+
+// invalidateHierarchyCache removes cached hierarchy for a department
+func (s *Service) invalidateHierarchyCache(departmentID uuid.UUID) {
+	ctx := context.Background()
+	cacheKey := s.cacheKeys.Build("hierarchy", departmentID.String())
+
+	if err := s.cache.Delete(ctx, cacheKey); err != nil {
+		s.logger.Warn("Failed to invalidate cache for department hierarchy",
+			logging.String("department_id", departmentID.String()),
+			logging.String("cache_key", cacheKey),
+			logging.Error(err),
+		)
+	} else {
+		s.logger.Debug("Cache invalidated for department hierarchy",
+			logging.String("department_id", departmentID.String()),
+			logging.String("cache_key", cacheKey),
+		)
+	}
 }

@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"time"
 
 	"api-employees-and-departments/config"
 	_ "api-employees-and-departments/docs"
 	"api-employees-and-departments/internal/db"
 	"api-employees-and-departments/internal/domain/department"
 	"api-employees-and-departments/internal/domain/employee"
+	infraCache "api-employees-and-departments/internal/infrastructure/cache"
 	ginapi "api-employees-and-departments/internal/infrastructure/http/gin"
 	"api-employees-and-departments/internal/infrastructure/logging"
 	"api-employees-and-departments/internal/infrastructure/persistence"
@@ -62,6 +65,31 @@ func main() {
 		zap.String("database", cfg.DBName),
 	)
 
+	// Connect to Redis for caching
+	redisClient, err := infraCache.NewRedisClient(cfg)
+	if err != nil {
+		logging.Fatal("Failed to connect to Redis", zap.Error(err))
+	}
+
+	logging.Info("Redis connected successfully",
+		zap.String("host", cfg.RedisHost),
+		zap.String("port", cfg.RedisPort),
+	)
+
+	// Create cache implementation
+	cache := infraCache.NewRedisCache(redisClient)
+
+	// Parse cache TTL
+	cacheTTLSeconds, err := strconv.Atoi(cfg.CacheTTL)
+	if err != nil {
+		cacheTTLSeconds = 300 // Default 5 minutes
+	}
+	cacheTTL := time.Duration(cacheTTLSeconds) * time.Second
+
+	logging.Info("Cache configured",
+		zap.String("ttl", cacheTTL.String()),
+	)
+
 	// Note: Migrations are handled by Flyway before the application starts
 	// See docker-compose.yml for Flyway configuration
 
@@ -76,9 +104,9 @@ func main() {
 	employeeLogger := logging.NewZapLogger(logging.GetLogger().With(zap.String("service", "employee")))
 	departmentLogger := logging.NewZapLogger(logging.GetLogger().With(zap.String("service", "department")))
 
-	// Initialize services with logger injection
+	// Initialize services with logger and cache injection (DIP applied)
 	employeeService := employee.NewService(employeeRepo, employeeLogger)
-	departmentService := department.NewService(departmentRepo, employeeAdapter, departmentLogger)
+	departmentService := department.NewService(departmentRepo, employeeAdapter, departmentLogger, cache, cacheTTL)
 
 	// Initialize handlers
 	employeeHandler := ginapi.NewEmployeeHandler(employeeService)
