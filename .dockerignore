@@ -7,3 +7,8 @@
 *.log
 tmp/
 .DS_Store
+coverage.out
+coverage.html
+main
+Makefile
+requerimentos.txt

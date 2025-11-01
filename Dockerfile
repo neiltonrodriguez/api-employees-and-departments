@@ -1,3 +1,20 @@
+# Test stage
+FROM golang:1.24.9-alpine AS test
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN go test -v ./internal/domain/validators/... \
+    ./internal/domain/employee/... \
+    ./internal/domain/department/... \
+    -coverprofile=coverage.out
+
+RUN go tool cover -func=coverage.out
+
 # Build stage
 FROM golang:1.24.9-alpine AS builder
 

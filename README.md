@@ -237,7 +237,30 @@ require (
 
 ## Testes
 
-Para testar a API, você pode usar:
+O projeto possui **cobertura de testes unitários (~79%)** que são executados automaticamente durante o build do container.
+
+### Execução Automática
+
+Os testes rodam automaticamente ao subir o container:
+
+```bash
+docker-compose up --build
+```
+
+Se algum teste falhar, o build será interrompido e a aplicação não subirá.
+
+### Execução Manual via Docker
+
+Para rodar apenas os testes:
+
+```bash
+docker-compose build test
+docker-compose run --rm test
+```
+
+### Testando a API
+
+Para testar os endpoints da API, você pode usar:
 
 - **curl** (exemplos acima)
 - **Swagger** (http://localhost:8080/docs/index.html)
