@@ -12,3 +12,4 @@ coverage.html
 main
 Makefile
 requerimentos.txt
+prometheus.yml

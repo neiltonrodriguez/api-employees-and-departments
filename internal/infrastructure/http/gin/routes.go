@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
 type RouterConfig struct {
@@ -14,6 +15,9 @@ type RouterConfig struct {
 
 // SetupRoutes configures all API routes
 func SetupRoutes(router *gin.Engine, config *RouterConfig) {
+	p := ginprometheus.NewPrometheus("gin")
+	p.Use(router)
+
 	// Global middlewares
 	router.Use(CORSMiddleware())
 	router.Use(RequestID())

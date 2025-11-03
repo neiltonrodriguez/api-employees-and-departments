@@ -1,3 +1,11 @@
 vendor
 .env
 .vscode
+.idea
+.DS_Store
+
+coverage.out
+coverage.html
+main
+
+*.log

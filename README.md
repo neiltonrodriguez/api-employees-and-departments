@@ -8,9 +8,11 @@ Uma API REST em Golang para gerenciar Colaboradores (Employees) e Departamentos 
 - **Framework HTTP:** Gin
 - **ORM:** GORM
 - **Banco de Dados:** PostgreSQL 15
+- **Cache:** Redis 7
 - **Migrations:** Flyway
+- **Métricas:** Prometheus
 - **Containerização:** Docker + docker-compose
-- **Dcos:** Swagger
+- **Documentação:** Swagger
 
 ## Funcionalidades
 
@@ -56,8 +58,9 @@ Uma API REST em Golang para gerenciar Colaboradores (Employees) e Departamentos 
 ### Pré-requisitos
 
 - Docker e Docker Compose instalados
+- Make (opcional, mas recomendado)
 
-### Usando Docker
+### Início Rápido
 
 1. Clone o repositório:
 ```bash
@@ -68,24 +71,58 @@ cd api-employees-and-departments
 2. Configure as variáveis de ambiente (opcional):
 ```bash
 cp .env-example .env
-# Edite .env se necessário
 ```
 
-3. Suba os containers:
+3. Suba todos os serviços:
 ```bash
-docker-compose up --build
+make docker-up
 ```
 
-4. A API estará disponível em: `http://localhost:8080`
+A API estará disponível em:
+- **API**: http://localhost:8080
+- **Swagger**: http://localhost:8080/docs/index.html
+- **Métricas**: http://localhost:8080/metrics
+- **Prometheus**: http://localhost:9090
+- **PostgreSQL**: localhost:5432
+- **Redis**: localhost:6380
 
-5. Para parar os containers:
+### Comandos Disponíveis
+
+Para ver todos os comandos disponíveis:
 ```bash
-docker-compose down
+make help
 ```
 
-6. Para parar e remover volumes (limpa banco de dados):
+#### Comandos Principais
+
+**Gerenciamento de Containers:**
 ```bash
-docker-compose down -v
+make docker-up              # Iniciar todos os serviços
+make docker-down            # Parar todos os serviços
+make docker-restart         # Reiniciar todos os serviços
+make docker-build           # Rebuild das imagens Docker
+make docker-clean-volumes   # Parar e remover volumes (limpa banco de dados)
+```
+
+**Logs:**
+```bash
+make docker-logs            # Ver logs da API
+make docker-logs-all        # Ver logs de todos os serviços
+make db-logs                # Ver logs do PostgreSQL
+make redis-logs             # Ver logs do Redis
+make prometheus-logs        # Ver logs do Prometheus
+```
+
+**Testes:**
+```bash
+make test                   # Executar testes unitários
+make test-coverage          # Executar testes com relatório de cobertura
+make docker-test            # Executar testes no Docker
+```
+
+**Database:**
+```bash
+make migrations-status      # Ver status das migrations
 ```
 
 ## Exemplos de Requisições
@@ -235,6 +272,35 @@ require (
 )
 ```
 
+## Métricas e Monitoramento
+
+O projeto possui **Prometheus** integrado para coleta de métricas da aplicação via middleware Gin.
+
+### Endpoints de Métricas
+
+- **Métricas da Aplicação**: `http://localhost:8080/metrics`
+- **Dashboard Prometheus**: `http://localhost:9090`
+
+### Métricas Disponíveis
+
+O middleware Prometheus coleta automaticamente:
+- Latência de requisições HTTP
+- Total de requisições por endpoint
+- Tamanho de requisições e respostas
+- Contadores de status HTTP (2xx, 4xx, 5xx)
+
+### Acessando o Prometheus
+
+Após subir os containers, acesse:
+```
+http://localhost:9090
+```
+
+Exemplos de queries:
+- `gin_request_duration_seconds` - Duração das requisições
+- `gin_requests_total` - Total de requisições
+- `gin_request_size_bytes` - Tamanho das requisições
+
 ## Testes
 
 O projeto possui **cobertura de testes unitários (~79%)** que são executados automaticamente durante o build do container.
@@ -244,23 +310,31 @@ O projeto possui **cobertura de testes unitários (~79%)** que são executados a
 Os testes rodam automaticamente ao subir o container:
 
 ```bash
-docker-compose up --build
+make docker-up
 ```
 
 Se algum teste falhar, o build será interrompido e a aplicação não subirá.
 
-### Execução Manual via Docker
+### Execução Manual
 
-Para rodar apenas os testes:
-
+**Testes localmente:**
 ```bash
-docker-compose build test
-docker-compose run --rm test
+make test                # Executar testes
+make test-verbose        # Testes com output detalhado
+make test-coverage       # Testes com relatório de cobertura (gera HTML)
 ```
+
+**Testes via Docker:**
+```bash
+make docker-test         # Executar testes no container Docker
+```
+
+Para mais detalhes sobre os testes, consulte [TESTING.md](TESTING.md).
 
 ### Testando a API
 
 Para testar os endpoints da API, você pode usar:
 
-- **curl** (exemplos acima)
 - **Swagger** (http://localhost:8080/docs/index.html)
+- **curl** (exemplos acima)
+- **Postman** ou outras ferramentas de API
